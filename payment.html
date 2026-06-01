@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payment — TICKETS HUB</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="api.js"></script>
+  <style>
+    :root {
+      --purple-deep:   #1a0a2e;
+      --purple-bright: #7c3aed;
+      --purple-glow:   #a855f7;
+      --gold:          #f59e0b;
+      --white:         #fafafa;
+      --gray-light:    #d1d5db;
+      --gray-mid:      #6b7280;
+      --dark-card:     #120826;
+      --border:        rgba(124,58,237,0.25);
+      --success:       #10b981;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--purple-deep);
+      color: var(--white);
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse 60% 60% at 50% 30%, rgba(124,58,237,0.2) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(26,10,46,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem;
+      letter-spacing: 0.08em; color: var(--white); text-decoration: none;
+    }
+    .nav-logo span { color: var(--purple-glow); }
+    .nav-secure {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.78rem; color: var(--gray-mid);
+    }
+
+    /* PAGE */
+    .page {
+      max-width: 900px; margin: 0 auto;
+      padding: 6rem 2rem 4rem;
+      position: relative; z-index: 1;
+    }
+
+    /* Progress */
+    .progress-bar {
+      display: flex; align-items: center; gap: 0; margin-bottom: 3rem;
+    }
+    .progress-step {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.78rem; font-weight: 600;
+    }
+    .step-circle {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700;
+      border: 2px solid var(--border); color: var(--gray-mid); flex-shrink: 0;
+    }
+    .progress-step.active .step-circle { background: var(--purple-bright); border-color: var(--purple-bright); color: #fff; }
+    .progress-step.done .step-circle   { background: var(--success); border-color: var(--success); color: #fff; }
+    .step-label { color: var(--gray-mid); }
+    .progress-step.active .step-label { color: var(--white); font-weight: 700; }
+    .progress-step.done .step-label   { color: var(--success); }
+    .step-line { flex: 1; height: 2px; background: var(--border); margin: 0 0.75rem; min-width: 30px; }
+    .step-line.done { background: var(--success); }
+
+    /* Page header */
+    .page-header { text-align: center; margin-bottom: 3rem; }
+    .page-tag {
+      display: inline-block; font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--purple-glow); margin-bottom: 0.6rem;
+    }
+    .page-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.2rem); letter-spacing: 0.04em;
+      margin-bottom: 0.5rem;
+    }
+    .page-sub { font-size: 0.9rem; color: var(--gray-mid); }
+
+    /* Layout */
+    .pay-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    /* ── QR CARD ── */
+    .qr-card {
+      background: rgba(18,8,38,0.85);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 2rem;
+      backdrop-filter: blur(20px);
+      text-align: center;
+    }
+    .qr-card-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem; letter-spacing: 0.04em;
+      margin-bottom: 0.5rem;
+    }
+    .qr-card-sub {
+      font-size: 0.8rem; color: var(--gray-mid); margin-bottom: 1.75rem;
+      line-height: 1.5;
+    }
+
+    /* QR code display */
+    .qr-wrap {
+      position: relative;
+      width: 220px; height: 220px;
+      margin: 0 auto 1.5rem;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 3px solid rgba(124,58,237,0.4);
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 40px rgba(124,58,237,0.3);
+    }
+    .qr-wrap::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(124,58,237,0.05) 0%, transparent 50%);
+      z-index: 1; pointer-events: none;
+    }
+    /* Scanning line animation */
+    .qr-scan-line {
+      position: absolute; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(124,58,237,0.8), transparent);
+      animation: scan 2.5s ease-in-out infinite;
+      z-index: 2;
+    }
+    @keyframes scan {
+      0%   { top: 10%; }
+      50%  { top: 85%; }
+      100% { top: 10%; }
+    }
+
+    /* SVG QR code (placeholder pattern) */
+    .qr-svg {
+      width: 190px; height: 190px;
+    }
+
+    .qr-corner {
+      position: absolute; width: 28px; height: 28px;
+      border-color: var(--purple-bright); border-style: solid;
+      z-index: 3;
+    }
+    .qr-corner.tl { top: 6px; left: 6px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    .qr-corner.tr { top: 6px; right: 6px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+    .qr-corner.bl { bottom: 6px; left: 6px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+    .qr-corner.br { bottom: 6px; right: 6px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+    .qr-amount {
+      display: inline-block;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem; color: var(--purple-glow);
+      background: rgba(124,58,237,0.1);
+      border: 1px solid rgba(124,58,237,0.25);
+      border-radius: 12px;
+      padding: 0.4rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .qr-steps {
+      text-align: left;
+      display: flex; flex-direction: column; gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .qr-step-item {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      font-size: 0.82rem; color: var(--gray-light); line-height: 1.5;
+    }
+    .qr-step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(124,58,237,0.2);
+      border: 1px solid rgba(124,58,237,0.4);
+      color: var(--purple-glow); font-size: 0.7rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+
+    .btn-submit-order {
+      width: 100%; padding: 0.95rem;
+      background: var(--purple-bright); color: #fff;
+      border: none; border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem; font-weight: 700;
+      cursor: pointer; transition: all 0.25s;
+      box-shadow: 0 0 30px rgba(124,58,237,0.4);
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .btn-submit-order:hover {
+      background: var(--purple-glow);
+      box-shadow: 0 0 40px rgba(168,85,247,0.5);
+      transform: translateY(-1px);
+    }
+    .paid-note {
+      font-size: 0.73rem; color: var(--gray-mid); line-height: 1.6;
+    }
+
+    /* ── ORDER SUMMARY (right) ── */
+    .order-panel {
+      background: rgba(18,8,38,0.85);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 1.75rem;
+      backdrop-filter: blur(20px);
+    }
+    .panel-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem; letter-spacing: 0.04em;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Buyer info display */
+    .buyer-display {
+      background: rgba(124,58,237,0.07);
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 12px; padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .buyer-row {
+      display: flex; justify-content: space-between;
+      font-size: 0.82rem; padding: 0.3rem 0;
+    }
+    .buyer-row .b-label { color: var(--gray-mid); }
+    .buyer-row .b-value { font-weight: 600; text-align: right; }
+
+    /* Order items */
+    .order-item {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem; gap: 1rem;
+    }
+    .order-item:last-of-type { border-bottom: none; }
+    .oi-left .oi-name { font-weight: 700; margin-bottom: 0.2rem; }
+    .oi-left .oi-tier { font-size: 0.73rem; color: var(--purple-glow); }
+    .oi-right { text-align: right; flex-shrink: 0; }
+    .oi-price { font-weight: 700; }
+    .oi-qty   { font-size: 0.73rem; color: var(--gray-mid); }
+
+    .order-totals { padding-top: 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+    .ot-row {
+      display: flex; justify-content: space-between;
+      font-size: 0.83rem;
+    }
+    .ot-row .ot-l { color: var(--gray-mid); }
+    .ot-row .ot-r { font-weight: 600; }
+    .ot-row.grand {
+      padding-top: 0.75rem; border-top: 1px solid var(--border);
+      font-size: 1rem;
+    }
+    .ot-row.grand .ot-l { font-weight: 700; color: var(--white); }
+    .ot-row.grand .ot-r {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.7rem; color: var(--purple-glow); line-height: 1;
+    }
+
+    /* Order ID badge */
+    .order-id-badge {
+      margin-top: 1.25rem;
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 10px; padding: 0.75rem 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .oid-label { font-size: 0.7rem; color: var(--gray-mid); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+    .oid-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--gold); letter-spacing: 0.08em; }
+
+    /* Redirect fallback */
+    #noOrderMsg {
+      text-align: center; padding: 4rem 2rem;
+      background: rgba(18,8,38,0.5); border: 1px solid var(--border);
+      border-radius: 20px; display: none;
+    }
+
+    @media (max-width: 740px) {
+      .pay-layout { grid-template-columns: 1fr; }
+      .page { padding: 5rem 1.25rem 3rem; }
+      nav { padding: 0 1.25rem; }
+      .step-label { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html" class="nav-logo">TICKETS<span>HUB</span></a>
+    <div class="nav-secure">
+      🔒 Secure Checkout
+    </div>
+  </nav>
+
+  <div class="page">
+
+    <!-- Progress -->
+    <div class="progress-bar">
+      <div class="progress-step done">
+        <div class="step-circle">✓</div>
+        <span class="step-label">Cart</span>
+      </div>
+      <div class="step-line done"></div>
+      <div class="progress-step done">
+        <div class="step-circle">✓</div>
+        <span class="step-label">Details</span>
+      </div>
+      <div class="step-line done"></div>
+      <div class="progress-step active">
+        <div class="step-circle">3</div>
+        <span class="step-label">Payment</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="progress-step">
+        <div class="step-circle">4</div>
+        <span class="step-label">Confirm</span>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="page-tag">🔐 Secure Payment</div>
+      <h1 class="page-title">SCAN & PAY</h1>
+      <p class="page-sub">Scan the QR code below to complete your payment, then click "I've Paid"</p>
+    </div>
+
+    <!-- No order fallback -->
+    <div id="noOrderMsg">
+      <div style="font-size:2.5rem;margin-bottom:1rem;">⚠️</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;margin-bottom:0.5rem;">NO ORDER FOUND</div>
+      <p style="color:var(--gray-mid);margin-bottom:1.5rem;">Please add tickets to your cart first.</p>
+      <a href="index.html" style="display:inline-block;padding:0.8rem 2rem;background:var(--purple-bright);color:#fff;border-radius:10px;font-weight:700;text-decoration:none;">Browse Events</a>
+    </div>
+
+    <div class="pay-layout" id="payLayout">
+
+      <!-- LEFT: QR -->
+      <div class="qr-card">
+        <div class="qr-card-title">📱 Scan to Pay</div>
+        <p class="qr-card-sub">Open your mobile banking or e-wallet app and scan the QR code below to complete payment.</p>
+
+        <!-- QR code wrapper -->
+        <div class="qr-wrap">
+          <div class="qr-scan-line"></div>
+          <div class="qr-corner tl"></div>
+          <div class="qr-corner tr"></div>
+          <div class="qr-corner bl"></div>
+          <div class="qr-corner br"></div>
+          <!-- SVG QR placeholder — replace with your actual QR image -->
+          <svg class="qr-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <!-- Top-left finder -->
+            <rect x="10" y="10" width="60" height="60" rx="4" fill="#1a0a2e"/>
+            <rect x="18" y="18" width="44" height="44" rx="2" fill="white"/>
+            <rect x="26" y="26" width="28" height="28" rx="1" fill="#1a0a2e"/>
+            <!-- Top-right finder -->
+            <rect x="130" y="10" width="60" height="60" rx="4" fill="#1a0a2e"/>
+            <rect x="138" y="18" width="44" height="44" rx="2" fill="white"/>
+            <rect x="146" y="26" width="28" height="28" rx="1" fill="#1a0a2e"/>
+            <!-- Bottom-left finder -->
+            <rect x="10" y="130" width="60" height="60" rx="4" fill="#1a0a2e"/>
+            <rect x="18" y="138" width="44" height="44" rx="2" fill="white"/>
+            <rect x="26" y="146" width="28" height="28" rx="1" fill="#1a0a2e"/>
+            <!-- Data modules (pattern) -->
+            <rect x="80" y="10" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="96" y="10" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="112" y="10" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="80" y="26" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="112" y="26" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="88" y="34" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="96" y="42" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="80" y="50" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="104" y="50" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="80" y="80" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="96" y="80" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="112" y="80" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="128" y="80" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="80" y="96" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="104" y="96" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="128" y="96" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="88" y="104" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="112" y="104" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="80" y="112" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="96" y="112" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="120" y="112" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="130" y="80" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="146" y="80" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="162" y="80" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="178" y="80" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="138" y="88" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="162" y="88" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="178" y="96" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="138" y="104" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="154" y="104" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="170" y="104" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="80" y="130" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="96" y="130" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="112" y="130" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="80" y="146" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="104" y="146" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="120" y="146" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="88" y="162" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="112" y="162" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="128" y="162" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="80" y="170" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="96" y="170" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="120" y="170" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="80" y="178" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="104" y="178" width="8" height="8" fill="#1a0a2e"/>
+            <rect x="128" y="178" width="8" height="8" fill="#1a0a2e"/>
+            <!-- Center logo area -->
+            <rect x="88" y="88" width="24" height="24" rx="4" fill="white"/>
+            <text x="100" y="105" text-anchor="middle" font-size="10" font-weight="bold" fill="#7c3aed">TH</text>
+          </svg>
+        </div>
+
+        <!-- Amount -->
+        <div class="qr-amount" id="qrAmount">$0.00</div>
+
+        <!-- Steps -->
+        <div class="qr-steps">
+          <div class="qr-step-item">
+            <div class="qr-step-num">1</div>
+            <div>Open your banking app, e-wallet (GCash, PayMaya, KakaoPay, TrueMoney, etc.) or mobile payment app.</div>
+          </div>
+          <div class="qr-step-item">
+            <div class="qr-step-num">2</div>
+            <div>Scan this QR code and enter the exact amount shown above.</div>
+          </div>
+          <div class="qr-step-item">
+            <div class="qr-step-num">3</div>
+            <div>Once payment is sent, click <strong>"I've Paid"</strong> below. We will verify and send your confirmation by email.</div>
+          </div>
+        </div>
+
+        <button class="btn-submit-order" onclick="handlePaid()">
+          ✅ I've Paid — Submit My Order
+        </button>
+        <div class="paid-note">
+          Your order will be reviewed within 1–24 hours. Confirmation sent to your email once verified.
+        </div>
+      </div>
+
+      <!-- RIGHT: Order summary -->
+      <div class="order-panel">
+        <div class="panel-title">Order Summary</div>
+
+        <!-- Buyer info -->
+        <div class="buyer-display" id="buyerDisplay"></div>
+
+        <!-- Items -->
+        <div id="orderItemsList"></div>
+
+        <!-- Totals -->
+        <div class="order-totals" id="orderTotals"></div>
+
+        <!-- Order ID -->
+        <div class="order-id-badge">
+          <div>
+            <div class="oid-label">Order Reference</div>
+            <div class="oid-value" id="orderIdDisplay">—</div>
+          </div>
+          <div style="font-size:0.7rem;color:var(--gray-mid);">Save this number</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ── Load order ──
+    const order = JSON.parse(sessionStorage.getItem('th_pending_order') || 'null');
+    const session = Auth.getSession();
+    if (!session) { window.location.href = 'login.html'; }
+
+    if (!order) {
+      document.getElementById('payLayout').style.display = 'none';
+      document.getElementById('noOrderMsg').style.display = 'block';
+    } else {
+      // QR amount
+      document.getElementById('qrAmount').textContent = `$${order.total.toLocaleString()} USD`;
+      document.getElementById('orderIdDisplay').textContent = order.orderId;
+
+      // Buyer info
+      document.getElementById('buyerDisplay').innerHTML = `
+        <div class="buyer-row"><span class="b-label">Name</span><span class="b-value">${order.buyer.name}</span></div>
+   
