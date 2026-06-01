@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order Received — TICKETS HUB</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="api.js"></script>
+  <style>
+    :root {
+      --purple-deep:   #1a0a2e;
+      --purple-bright: #7c3aed;
+      --purple-glow:   #a855f7;
+      --gold:          #f59e0b;
+      --white:         #fafafa;
+      --gray-light:    #d1d5db;
+      --gray-mid:      #6b7280;
+      --dark-card:     #120826;
+      --border:        rgba(124,58,237,0.25);
+      --success:       #10b981;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--purple-deep);
+      color: var(--white);
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse 60% 60% at 50% 30%, rgba(16,185,129,0.1) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(26,10,46,0.92); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem; letter-spacing: 0.08em; color: var(--white); text-decoration: none; }
+    .nav-logo span { color: var(--purple-glow); }
+
+    .page {
+      max-width: 700px; margin: 0 auto;
+      padding: 6rem 2rem 4rem;
+      position: relative; z-index: 1;
+    }
+
+    /* Progress */
+    .progress-bar { display: flex; align-items: center; gap: 0; margin-bottom: 3rem; }
+    .progress-step { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; font-weight: 600; }
+    .step-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; border: 2px solid var(--border); color: var(--gray-mid); flex-shrink: 0; }
+    .progress-step.done .step-circle { background: var(--success); border-color: var(--success); color: #fff; }
+    .step-label { color: var(--gray-mid); }
+    .progress-step.done .step-label { color: var(--success); }
+    .step-line { flex: 1; height: 2px; background: var(--success); margin: 0 0.75rem; min-width: 30px; }
+
+    /* Success hero */
+    .success-hero {
+      text-align: center; margin-bottom: 2.5rem;
+      animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.8); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .success-ring {
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: rgba(16,185,129,0.12);
+      border: 3px solid var(--success);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.5rem;
+      font-size: 2.8rem;
+      box-shadow: 0 0 40px rgba(16,185,129,0.25);
+      animation: pulse-ring 2s ease infinite;
+    }
+    @keyframes pulse-ring {
+      0%,100% { box-shadow: 0 0 40px rgba(16,185,129,0.25); }
+      50%      { box-shadow: 0 0 60px rgba(16,185,129,0.4); }
+    }
+    .success-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      letter-spacing: 0.04em; line-height: 1;
+      margin-bottom: 0.6rem;
+    }
+    .success-title span { color: var(--success); }
+    .success-sub { font-size: 0.95rem; color: var(--gray-light); line-height: 1.7; max-width: 480px; margin: 0 auto; }
+
+    /* Order card */
+    .order-card {
+      background: rgba(18,8,38,0.85);
+      border: 1px solid var(--border);
+      border-radius: 20px; overflow: hidden;
+      backdrop-filter: blur(20px);
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.5s ease 0.2s both;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+    .order-card-header {
+      background: rgba(124,58,237,0.1);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 1.75rem;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;
+    }
+    .order-ref-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray-mid); margin-bottom: 0.2rem; }
+    .order-ref-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--gold); letter-spacing: 0.08em; }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.35rem 0.9rem; border-radius: 999px;
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .status-pending {
+      background: rgba(245,158,11,0.15);
+      border: 1px solid rgba(245,158,11,0.35);
+      color: var(--gold);
+    }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: currentColor; animation: blink 1.2s ease infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+    .order-card-body { padding: 1.75rem; }
+
+    /* Buyer summary */
+    .info-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .info-cell {}
+    .ic-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray-mid); margin-bottom: 0.3rem; }
+    .ic-value { font-size: 0.9rem; font-weight: 600; }
+
+    /* Ticket items */
+    .ticket-items-title {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--gray-mid); margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+    }
+    .ticket-item-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.7rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.88rem; gap: 1rem;
+    }
+    .ticket-item-row:last-child { border-bottom: none; }
+    .ti-left .ti-name { font-weight: 700; margin-bottom: 0.15rem; }
+    .ti-left .ti-tier { font-size: 0.73rem; color: var(--purple-glow); }
+    .ti-right { text-align: right; flex-shrink: 0; }
+    .ti-price { font-weight: 700; }
+    .ti-qty   { font-size: 0.72rem; color: var(--gray-mid); }
+
+    /* Total row */
+    .total-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 0 0; border-top: 1px solid var(--border); margin-top: 0.5rem;
+    }
+    .total-row .t-label { font-weight: 700; font-size: 1rem; }
+    .total-row .t-amount { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--purple-glow); line-height: 1; }
+
+    /* What happens next */
+    .next-card {
+      background: rgba(18,8,38,0.7);
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 16px; padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.5s ease 0.35s both;
+    }
+    .next-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem; margin-bottom: 1.25rem; letter-spacing: 0.04em;
+    }
+    .next-steps { display: flex; flex-direction: column; gap: 1rem; }
+    .next-step { display: flex; align-items: flex-start; gap: 0.9rem; }
+    .ns-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+    .ns-text { }
+    .ns-title { font-weight: 700; font-size: 0.88rem; margin-bottom: 0.2rem; }
+    .ns-desc  { font-size: 0.78rem; color: var(--gray-mid); line-height: 1.5; }
+
+    /* CTA buttons */
+    .cta-row {
+      display: flex; gap: 1rem; flex-wrap: wrap;
+      animation: fadeUp 0.5s ease 0.45s both;
+    }
+    .btn-home {
+      flex: 1;
+      padding: 0.9rem;
+      background: var(--purple-bright); color: #fff;
+      border: none; border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.25s;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      box-shadow: 0 0 25px rgba(124,58,237,0.35);
+    }
+    .btn-home:hover { background: var(--purple-glow); transform: translateY(-1px); }
+    .btn-browse {
+      flex: 1;
+      padding: 0.9rem;
+      background: transparent; color: var(--gray-light);
+      border: 1px solid var(--border); border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.25s;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .btn-browse:hover { border-color: rgba(168,85,247,0.4); color: var(--white); }
+
+    @media (max-width: 600px) {
+      .page { padding: 5rem 1.25rem 3rem; }
+      nav { padding: 0 1.25rem; }
+      .info-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+      .step-label { display: none; }
+      .cta-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html" class="nav-logo">TICKETS<span>HUB</span></a>
+  </nav>
+
+  <div class="page">
+
+    <!-- Progress (all done) -->
+    <div class="progress-bar">
+      <div class="progress-step done"><div class="step-circle">✓</div><span class="step-label">Cart</span></div>
+      <div class="step-line"></div>
+      <div class="progress-step done"><div class="step-circle">✓</div><span class="step-label">Details</span></div>
+      <div class="step-line"></div>
+      <div class="progress-step done"><div class="step-circle">✓</div><span class="step-label">Payment</span></div>
+      <div class="step-line"></div>
+      <div class="progress-step done"><div class="step-circle">✓</div><span class="step-label">Confirm</span></div>
+    </div>
+
+    <!-- Hero -->
+    <div class="success-hero">
+      <div class="success-ring">🎟️</div>
+      <h1 class="success-title">ORDER <span>RECEIVED!</span></h1>
+      <p class="success-sub">
+        Thank you! Your order has been submitted and is pending payment verification.
+        We'll send your ticket confirmation to your email once verified — usually within 1–24 hours.
+      </p>
+    </div>
+
+    <!-- Order card -->
+    <div class="order-card" id="orderCard">
+      <div class="order-card-header">
+        <div>
+          <div class="order-ref-label">Order Reference</div>
+          <div class="order-ref-value" id="orderId">—</div>
+        </div>
+        <div class="status-badge status-pending">
+          <span class="status-dot"></span>
+          Pending Verification
+        </div>
+      </div>
+      <div class="order-card-body">
+        <div class="info-grid" id="buyerInfo"></div>
+        <div class="ticket-items-title">Tickets</div>
+        <div id="ticketItemsList"></div>
+        <div class="total-row">
+          <div class="t-label">Total Paid</div>
+          <div class="t-amount" id="orderTotal">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What happens next -->
+    <div class="next-card">
+      <div class="next-title">⏭️ WHAT HAPPENS NEXT</div>
+      <div class="next-steps">
+        <div class="next-step">
+          <div class="ns-icon">🔍</div>
+          <div class="ns-text">
+            <div class="ns-title">Payment Verification</div>
+            <div class="ns-desc">We manually verify your QR payment. This usually takes 1–24 hours on business days.</div>
+          </div>
+        </div>
+        <div class="next-step">
+          <div class="ns-icon">📧</div>
+          <div class="ns-text">
+            <div class="ns-title">Confirmation Email</div>
+            <div class="ns-desc">Once verified, we'll send your ticket confirmation directly to your email address.</div>
+          </div>
+        </div>
+        <div class="next-step">
+          <div class="ns-icon">🎟️</div>
+          <div class="ns-text">
+            <div class="ns-title">Your Tickets</div>
+            <div class="ns-desc">Ticket details, QR entry code, and venue information will be included in your confirmation email.</div>
+          </div>
+        </div>
+        <div class="next-step">
+          <div class="ns-icon">💬</div>
+          <div class="ns-text">
+            <div class="ns-title">Questions?</div>
+            <div class="ns-desc">Save your order reference number above. Contact us at <strong style="color:var(--purple-glow)">support@ticketshub.com</strong> with any questions.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTAs -->
+    <div class="cta-row">
+      <a href="index.html" class="btn-home">🏠 Back to Home</a>
+      <a href="index.html" class="btn-browse">🎵 Browse More Events</a>
+    </div>
+
+  </div>
+
+  <script>
+    const order = JSON.parse(sessionStorage.getItem('th_confirmed_order') || 'null');
+    const session = Auth.getSession();
+    if (!session) { window.location.href = 'login.html'; }
+
+    if (order) {
+      document.getElementById('orderId').textContent = order.orderId;
+      document.getElementById('orderTotal').textContent = `$${order.total.toLocaleString()}`;
+
+      document.getElementById('buyerInfo').innerHTML = `
+        <div class="info-cell">
+          <div class="ic-label">Name</div>
+          <div class="ic-value">${order.buyer.name}</div>
+        </div>
+        <div class="info-cell">
+          <div class="ic-label">Email</div>
+          <div class="ic-value">${order.buyer.email}</div>
+        </div>
+        <div class="info-cell">
+          <div class="ic-label">Country</div>
+          <div class="ic-value">${order.buyer.country}</div>
+        </div>
+        <div class="info-cell">
+          <div class="ic-label">Order Date</div>
+          <div class="ic-value">${new Date(order.createdAt).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})}</div>
+        </div>
+      `;
+
+      document.getElementById('ticketItemsList').innerHTML = order.items.map(item => `
+        <div class="ticket-item-row">
+          <div class="ti-left">
+            <div class="ti-name">${item.artist} — ${item.event}</div>
+            <div class="ti-tier">🎟️ ${item.tier}</div>
+          </div>
+          <div class="ti-right">
+            <div class="ti-price">$${(item.price * item.qty).toLocaleString()}</div>
+            <div class="ti-qty">${item.qty} ticket(s) × $${item.price}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
