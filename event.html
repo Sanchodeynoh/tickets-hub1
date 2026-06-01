@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BTS ARIRANG World Tour 2026 — TICKETS HUB</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="api.js"></script>
+  <style>
+    :root {
+      --purple-deep:   #1a0a2e;
+      --purple-mid:    #3d1a6e;
+      --purple-bright: #7c3aed;
+      --purple-glow:   #a855f7;
+      --gold:          #f59e0b;
+      --white:         #fafafa;
+      --gray-light:    #d1d5db;
+      --gray-mid:      #6b7280;
+      --dark-card:     #120826;
+      --border:        rgba(124,58,237,0.25);
+      --success:       #10b981;
+      --error:         #ef4444;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--purple-deep);
+      color: var(--white);
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      height: 64px;
+      background: rgba(26,10,46,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.7rem;
+      letter-spacing: 0.08em;
+      color: var(--white);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--purple-glow); }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .nav-back {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.83rem; color: var(--gray-mid);
+      text-decoration: none; transition: color 0.2s;
+    }
+    .nav-back:hover { color: var(--purple-glow); }
+    .cart-btn {
+      position: relative; background: none; border: none;
+      cursor: pointer; color: var(--gray-light);
+      transition: color 0.2s; display: flex; align-items: center;
+    }
+    .cart-btn:hover { color: var(--purple-glow); }
+    .cart-count {
+      position: absolute; top: -6px; right: -8px;
+      background: var(--gold); color: #000;
+      font-size: 0.65rem; font-weight: 700;
+      width: 17px; height: 17px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── HERO BANNER ── */
+    .event-hero {
+      margin-top: 64px;
+      position: relative;
+      height: 380px;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+    .event-hero-bg {
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, #1a0050 0%, #0d0030 40%, #2a0880 100%);
+    }
+    .hero-orb-1 {
+      position: absolute; width: 500px; height: 500px;
+      border-radius: 50%; filter: blur(80px);
+      background: rgba(124,58,237,0.3);
+      top: -100px; right: -100px;
+      animation: float 8s ease-in-out infinite;
+    }
+    .hero-orb-2 {
+      position: absolute; width: 300px; height: 300px;
+      border-radius: 50%; filter: blur(60px);
+      background: rgba(168,85,247,0.2);
+      bottom: -50px; left: 10%;
+      animation: float 10s ease-in-out infinite reverse;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+    /* BTS text art */
+    .hero-art {
+      position: absolute;
+      right: 5%;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(6rem, 14vw, 12rem);
+      color: rgba(168,85,247,0.12);
+      letter-spacing: 0.05em;
+      pointer-events: none;
+      user-select: none;
+      line-height: 1;
+    }
+    .event-hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(26,10,46,1) 0%, rgba(26,10,46,0.4) 50%, transparent 100%);
+    }
+    .event-hero-content {
+      position: relative; z-index: 2;
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 2rem 2.5rem;
+      width: 100%;
+    }
+    .event-breadcrumb {
+      font-size: 0.75rem; color: var(--gray-mid);
+      margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .event-breadcrumb a { color: var(--gray-mid); text-decoration: none; }
+    .event-breadcrumb a:hover { color: var(--purple-glow); }
+    .event-tags { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .tag-pill {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+    }
+    .tag-presale { background: var(--purple-bright); color: #fff; }
+    .tag-kpop { background: rgba(168,85,247,0.2); color: var(--purple-glow); border: 1px solid rgba(168,85,247,0.4); }
+    .tag-featured { background: rgba(245,158,11,0.2); color: var(--gold); border: 1px solid rgba(245,158,11,0.4); }
+    .event-hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      letter-spacing: 0.04em;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .event-hero-title span { color: var(--purple-glow); }
+    .event-hero-sub {
+      font-size: 1rem; color: var(--gray-light);
+      font-weight: 300; letter-spacing: 0.02em;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .page-body {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 3rem;
+      align-items: start;
+    }
+
+    /* ── LEFT COLUMN ── */
+    .section-title-sm {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .section-title-sm::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Event info strip */
+    .info-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .info-block {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+    }
+    .info-block-label {
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--gray-mid); margin-bottom: 0.4rem;
+    }
+    .info-block-value {
+      font-size: 0.92rem; font-weight: 600;
+      color: var(--white); line-height: 1.3;
+    }
+    .info-block-value.highlight { color: var(--purple-glow); }
+
+    /* About */
+    .about-text {
+      font-size: 0.9rem; color: var(--gray-light);
+      line-height: 1.8; margin-bottom: 2.5rem;
+    }
+
+    /* Ticket Categories */
+    .ticket-categories { margin-bottom: 2.5rem; }
+
+    .ticket-tier {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.4rem 1.5rem;
+      margin-bottom: 1rem;
+      background: rgba(18,8,38,0.6);
+      transition: border-color 0.25s, box-shadow 0.25s;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .ticket-tier::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      border-radius: 14px 0 0 14px;
+    }
+    .ticket-tier.vip::before    { background: var(--gold); }
+    .ticket-tier.prem::before   { background: var(--purple-glow); }
+    .ticket-tier.floor::before  { background: #60a5fa; }
+    .ticket-tier.stand::before  { background: var(--success); }
+
+    .ticket-tier.selected {
+      border-color: var(--purple-bright);
+      box-shadow: 0 0 0 1px var(--purple-bright), 0 8px 24px rgba(124,58,237,0.2);
+    }
+    .ticket-tier:hover:not(.selected) { border-color: rgba(168,85,247,0.4); }
+
+    .tier-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .tier-name {
+      font-weight: 700; font-size: 1rem;
+      margin-bottom: 0.2rem;
+    }
+    .tier-desc {
+      font-size: 0.78rem; color: var(--gray-mid);
+      line-height: 1.5;
+    }
+    .tier-price-block { text-align: right; flex-shrink: 0; }
+    .tier-price {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.7rem; line-height: 1;
+    }
+    .tier-price-label {
+      font-size: 0.68rem; color: var(--gray-mid);
+      margin-top: 0.1rem;
+    }
+
+    .tier-perks {
+      display: flex; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .perk-chip {
+      font-size: 0.68rem; font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 999px;
+      color: var(--gray-light);
+    }
+
+    .tier-radio {
+      position: absolute;
+      top: 1.4rem; right: 1.5rem;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: transparent;
+      transition: all 0.2s;
+      pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ticket-tier.selected .tier-radio {
+      border-color: var(--purple-bright);
+      background: var(--purple-bright);
+    }
+    .tier-radio::after {
+      content: '';
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #fff;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .ticket-tier.selected .tier-radio::after { opacity: 1; }
+
+    /* sold out */
+    .ticket-tier.sold-out {
+      opacity: 0.5; cursor: not-allowed;
+    }
+    .sold-out-badge {
+      display: inline-block;
+      font-size: 0.65rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      background: rgba(239,68,68,0.2);
+      color: var(--error);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 4px;
+      padding: 0.15rem 0.5rem;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    /* Venue map placeholder */
+    .venue-box {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 2.5rem;
+    }
+    .venue-map-placeholder {
+      height: 180px;
+      background: linear-gradient(135deg, #0d0030 0%, #1a0050 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; color: rgba(168,85,247,0.3);
+      border-bottom: 1px solid var(--border);
+    }
+    .venue-info { padding: 1rem 1.25rem; }
+    .venue-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.3rem; }
+    .venue-address { font-size: 0.8rem; color: var(--gray-mid); }
+
+    /* ── RIGHT COLUMN — ORDER BOX ── */
+    .order-box {
+      background: rgba(18,8,38,0.85);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.75rem;
+      backdrop-filter: blur(20px);
+      position: sticky;
+      top: 84px;
+    }
+
+    .order-box-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.04em;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Selected tier display */
+    .selected-tier-display {
+      background: rgba(124,58,237,0.08);
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .std-name { font-weight: 700; font-size: 0.9rem; }
+    .std-price { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--purple-glow); }
+    .std-placeholder { font-size: 0.82rem; color: var(--gray-mid); }
+
+    /* Quantity */
+    .qty-label {
+      font-size: 0.78rem; font-weight: 600;
+      color: var(--gray-light); margin-bottom: 0.5rem;
+      letter-spacing: 0.02em;
+    }
+    .qty-row {
+      display: flex; align-items: center; gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+      margin-bottom: 1.25rem;
+    }
+    .qty-btn {
+      width: 44px; height: 44px;
+      background: rgba(255,255,255,0.04);
+      border: none; cursor: pointer;
+      color: var(--white); font-size: 1.2rem;
+      transition: background 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qty-btn:hover { background: rgba(124,58,237,0.2); }
+    .qty-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .qty-display {
+      flex: 1; text-align: center;
+      font-weight: 700; font-size: 1.1rem;
+      background: transparent;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      padding: 0.6rem;
+    }
+
+    /* Price breakdown */
+    .price-breakdown {
+      margin-bottom: 1.5rem;
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .price-row {
+      display: flex; justify-content: space-between;
+      align-items: center; font-size: 0.85rem;
+    }
+    .price-row .label { color: var(--gray-mid); }
+    .price-row .value { font-weight: 600; }
+    .price-row.total {
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      font-size: 1rem;
+    }
+    .price-row.total .label { color: var(--white); font-weight: 700; }
+    .price-row.total .value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      color: var(--purple-glow);
+    }
+
+    /* Buttons */
+    .btn-buy-now {
+      width: 100%;
+      padding: 0.9rem;
+      background: var(--purple-bright);
+      color: var(--white);
+      border: none; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem; font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: 0 0 30px rgba(124,58,237,0.4);
+      margin-bottom: 0.75rem;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .btn-buy-now:hover {
+      background: var(--purple-glow);
+      box-shadow: 0 0 40px rgba(168,85,247,0.5);
+      transform: translateY(-1px);
+    }
+    .btn-buy-now:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-add-cart {
+      width: 100%;
+      padding: 0.9rem;
+      background: transparent;
+      color: var(--purple-glow);
+      border: 1px solid rgba(124,58,237,0.4);
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem; font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s;
+      margin-bottom: 1.25rem;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .btn-add-cart:hover {
+      background: rgba(124,58,237,0.1);
+      border-color: var(--purple-glow);
+    }
+    .btn-add-cart:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .order-note {
+      font-size: 0.73rem; color: var(--gray-mid);
+      text-align: center; line-height: 1.6;
+      display: flex; align-items: flex-start; gap: 0.4rem;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--dark-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      font-size: 0.88rem; font-weight: 600;
+      z-index: 999;
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: rgba(16,185,129,0.4); }
+    .toast.cart    { border-color: rgba(124,58,237,0.4); }
+    .toast-icon { font-size: 1.2rem; }
+
+    /* Login prompt */
+    .login-prompt {
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      font-size: 0.82rem;
+      color: var(--gold);
+      margin-bottom: 1rem;
+      display: none;
+      text-align: center;
+    }
+    .login-prompt a { color: var(--gold); font-weight: 700; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .page-body {
+        grid-template-columns: 1fr;
+      }
+      .order-box { position: static; }
+      .hero-art { display: none; }
+    }
+    @media (max-width: 600px) {
+      nav { padding: 0 1.25rem; }
+      .page-body { padding: 2rem 1.25rem; }
+      .event-hero-content { padding: 0 1.25rem 2rem; }
+      .info-strip { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="nav-logo">TICKETS<span>HUB</span></a>
+    <div class="nav-right">
+      <a href="index.html" class="nav-back">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        All Events
+      </a>
+      <button class="cart-btn" onclick="window.location.href='cart.html'" aria-label="Cart">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO BANNER -->
+  <div class="event-hero">
+    <div class="event-hero-bg"></div>
+    <div class="hero-orb-1"></div>
+    <div class="hero-orb-2"></div>
+    <div class="hero-art">BTS</div>
+    <div class="event-hero-overlay"></div>
+    <div class="event-hero-content">
+      <div class="event-breadcrumb">
+        <a href="index.html">Home</a> ›
+        <a href="#">Events</a> ›
+        <a href="#">K-Pop</a> ›
+        BTS ARIRANG
+      </div>
+      <div class="event-tags">
+        <span class="tag-pill tag-presale">🔐 Presale</span>
+        <span class="tag-pill tag-kpop">K-Pop</span>
+        <span class="tag-pill tag-featured">⭐ Featured</span>
+      </div>
+      <h1 class="event-hero-title">BTS <span>ARIRANG</span><br/>WORLD TOUR 2026</h1>
+      <div class="event-hero-sub">방탄소년단 • Bangtan Boys • 防弾少年団</div>
+    </div>
+  </div>
+
+  <!-- PAGE BODY -->
+  <div class="page-body">
+
+    <!-- LEFT: Event Info + Ticket Tiers -->
+    <div class="left-col">
+
+      <!-- Info Strip -->
+      <div class="info-strip">
+        <div class="info-block">
+          <div class="info-block-label">📅 Date</div>
+          <div class="info-block-value">TBA — 2026</div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-label">📍 Venue</div>
+          <div class="info-block-value">Multiple Cities<br/><span style="font-size:0.78rem;color:var(--gray-mid);">Venue TBA</span></div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-label">🎟️ Availability</div>
+          <div class="info-block-value highlight">Presale Open</div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-label">⏳ Presale Ends</div>
+          <div class="info-block-value">When Sold Out</div>
+        </div>
+      </div>
+
+      <!-- About -->
+      <div class="section-title-sm">About This Event</div>
+      <p class="about-text">
+        BTS returns with their highly anticipated <strong>ARIRANG World Tour 2026</strong> — a monumental concert series celebrating their journey, their roots, and their ARMY. Featuring all seven members, this tour promises a spectacular blend of live performances, breathtaking stage productions, and unforgettable fan moments.<br/><br/>
+        TicketsHub offers exclusive presale access before general availability. Secure your spot now — quantities are strictly limited and confirmed on a first-come, first-served basis. Once payment is verified, your ticket confirmation will be sent directly to your email.
+        <br/><br/>
+        <em style="col
