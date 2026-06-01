@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Cart — TICKETS HUB</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="api.js"></script>
+  <style>
+    :root {
+      --purple-deep:   #1a0a2e;
+      --purple-mid:    #3d1a6e;
+      --purple-bright: #7c3aed;
+      --purple-glow:   #a855f7;
+      --gold:          #f59e0b;
+      --white:         #fafafa;
+      --gray-light:    #d1d5db;
+      --gray-mid:      #6b7280;
+      --dark-card:     #120826;
+      --border:        rgba(124,58,237,0.25);
+      --error:         #ef4444;
+      --success:       #10b981;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--purple-deep);
+      color: var(--white);
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 50% 50% at 80% 10%, rgba(124,58,237,0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 10% 90%, rgba(168,85,247,0.1) 0%, transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 64px;
+      background: rgba(26,10,46,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem;
+      letter-spacing: 0.08em; color: var(--white); text-decoration: none;
+    }
+    .nav-logo span { color: var(--purple-glow); }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .nav-back {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.83rem; color: var(--gray-mid);
+      text-decoration: none; transition: color 0.2s;
+    }
+    .nav-back:hover { color: var(--purple-glow); }
+    .nav-user {
+      font-size: 0.83rem; color: var(--gray-light);
+    }
+    .nav-user strong { color: var(--purple-glow); }
+
+    /* ── PAGE ── */
+    .page {
+      max-width: 1100px; margin: 0 auto;
+      padding: 6rem 2rem 4rem;
+      position: relative; z-index: 1;
+    }
+
+    /* Page header */
+    .page-header {
+      margin-bottom: 2.5rem;
+    }
+    .page-label {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--purple-glow); margin-bottom: 0.4rem;
+    }
+    .page-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      letter-spacing: 0.04em; line-height: 1;
+    }
+    .page-subtitle {
+      font-size: 0.88rem; color: var(--gray-mid); margin-top: 0.4rem;
+    }
+
+    /* Progress steps */
+    .progress-bar {
+      display: flex; align-items: center;
+      gap: 0; margin-bottom: 3rem;
+    }
+    .progress-step {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.78rem; font-weight: 600;
+    }
+    .step-circle {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700;
+      border: 2px solid var(--border);
+      color: var(--gray-mid);
+      flex-shrink: 0;
+    }
+    .progress-step.active .step-circle {
+      background: var(--purple-bright);
+      border-color: var(--purple-bright);
+      color: #fff;
+    }
+    .progress-step.done .step-circle {
+      background: var(--success);
+      border-color: var(--success);
+      color: #fff;
+    }
+    .step-label { color: var(--gray-mid); }
+    .progress-step.active .step-label { color: var(--white); font-weight: 700; }
+    .progress-step.done .step-label { color: var(--success); }
+    .step-line {
+      flex: 1; height: 2px;
+      background: var(--border);
+      margin: 0 0.75rem;
+      min-width: 30px;
+    }
+    .step-line.done { background: var(--success); }
+
+    /* ── LAYOUT ── */
+    .cart-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 2.5rem;
+      align-items: start;
+    }
+
+    /* ── CART ITEMS ── */
+    .cart-items-section { }
+
+    .section-heading {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem; letter-spacing: 0.04em;
+      margin-bottom: 1.25rem;
+      display: flex; align-items: center; gap: 0.6rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .item-count {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.75rem; font-weight: 700;
+      background: rgba(124,58,237,0.2);
+      color: var(--purple-glow);
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+    }
+
+    /* Cart item card */
+    .cart-item {
+      background: rgba(18,8,38,0.7);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.4rem 1.5rem;
+      margin-bottom: 1rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1.25rem;
+      align-items: center;
+      transition: border-color 0.2s;
+      animation: slideIn 0.3s ease both;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .cart-item:hover { border-color: rgba(168,85,247,0.35); }
+
+    /* Event color strip */
+    .item-thumb {
+      width: 56px; height: 56px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.75rem; letter-spacing: 0.05em;
+      text-align: center; line-height: 1.2;
+      flex-shrink: 0;
+    }
+    .thumb-bts    { background: linear-gradient(135deg,#2a0d6b,#4a1a8e); color: rgba(168,85,247,0.8); }
+    .thumb-weeknd { background: linear-gradient(135deg,#3d0000,#5a1a1a); color: rgba(239,68,68,0.7); }
+    .thumb-exo    { background: linear-gradient(135deg,#0d2060,#1a3a8e); color: rgba(96,165,250,0.7); }
+    .thumb-default{ background: linear-gradient(135deg,#1a0a2e,#3d1a6e); color: rgba(168,85,247,0.6); }
+
+    .item-info { }
+    .item-artist {
+      font-weight: 700; font-size: 0.98rem; margin-bottom: 0.15rem;
+    }
+    .item-event {
+      font-size: 0.75rem; color: var(--purple-glow);
+      font-weight: 600; margin-bottom: 0.4rem;
+    }
+    .item-tier {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-size: 0.72rem; color: var(--gray-mid);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px; padding: 0.2rem 0.6rem;
+    }
+
+    .item-controls {
+      display: flex; flex-direction: column;
+      align-items: flex-end; gap: 0.75rem;
+    }
+    .item-price {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem; line-height: 1;
+      color: var(--white);
+    }
+    .item-unit-price {
+      font-size: 0.7rem; color: var(--gray-mid); text-align: right;
+    }
+
+    /* Qty controls */
+    .qty-controls {
+      display: flex; align-items: center;
+      border: 1px solid var(--border); border-radius: 8px;
+      overflow: hidden;
+    }
+    .qty-btn {
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.04);
+      border: none; cursor: pointer;
+      color: var(--white); font-size: 1rem;
+      transition: background 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qty-btn:hover { background: rgba(124,58,237,0.25); }
+    .qty-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .qty-num {
+      width: 36px; text-align: center;
+      font-size: 0.9rem; font-weight: 700;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      padding: 0.3rem 0;
+    }
+
+    .btn-remove {
+      background: none; border: none; cursor: pointer;
+      color: var(--gray-mid); font-size: 0.73rem;
+      display: flex; align-items: center; gap: 0.3rem;
+      transition: color 0.2s; padding: 0;
+    }
+    .btn-remove:hover { color: var(--error); }
+
+    /* Empty cart */
+    .empty-cart {
+      text-align: center; padding: 4rem 2rem;
+      background: rgba(18,8,38,0.5);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      display: none;
+    }
+    .empty-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .empty-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem; margin-bottom: 0.5rem;
+    }
+    .empty-sub { font-size: 0.88rem; color: var(--gray-mid); margin-bottom: 1.75rem; }
+    .btn-browse {
+      display: inline-block;
+      padding: 0.8rem 2rem;
+      background: var(--purple-bright); color: #fff;
+      border-radius: 10px; font-weight: 700;
+      text-decoration: none; font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .btn-browse:hover { background: var(--purple-glow); }
+
+    /* Promo code */
+    .promo-row {
+      display: flex; gap: 0.75rem; margin-top: 1.5rem;
+    }
+    .promo-input {
+      flex: 1;
+      padding: 0.65rem 1rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--white); font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem; outline: none;
+      transition: border-color 0.2s;
+    }
+    .promo-input::placeholder { color: var(--gray-mid); }
+    .promo-input:focus { border-color: var(--purple-bright); }
+    .btn-apply {
+      padding: 0.65rem 1.25rem;
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.35);
+      border-radius: 10px;
+      color: var(--purple-glow); font-weight: 700;
+      font-size: 0.85rem; cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .btn-apply:hover { background: rgba(124,58,237,0.25); }
+
+    /* ── ORDER SUMMARY ── */
+    .order-summary {
+      background: rgba(18,8,38,0.85);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 1.75rem;
+      backdrop-filter: blur(20px);
+      position: sticky; top: 84px;
+    }
+    .summary-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem; letter-spacing: 0.04em;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .summary-lines { margin-bottom: 1.25rem; }
+    .summary-line {
+      display: flex; justify-content: space-between;
+      align-items: center; font-size: 0.85rem;
+      padding: 0.45rem 0;
+    }
+    .summary-line .s-label { color: var(--gray-mid); }
+    .summary-line .s-value { font-weight: 600; }
+    .summary-line.discount .s-value { color: var(--success); }
+
+    .summary-divider { border: none; border-top: 1px solid var(--border); margin: 0.75rem 0; }
+
+    .summary-total {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 1.75rem;
+    }
+    .total-label { font-weight: 700; font-size: 1rem; }
+    .total-amount {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem; color: var(--purple-glow); line-height: 1;
+    }
+
+    .btn-checkout {
+      width: 100%; padding: 1rem;
+      background: var(--purple-bright); color: #fff;
+      border: none; border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem; font-weight: 700;
+      cursor: pointer; transition: all 0.25s;
+      box-shadow: 0 0 30px rgba(124,58,237,0.4);
+      margin-bottom: 0.75rem;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .btn-checkout:hover {
+      background: var(--purple-glow);
+      box-shadow: 0 0 40px rgba(168,85,247,0.5);
+      transform: translateY(-1px);
+    }
+    .btn-checkout:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .btn-continue {
+      width: 100%; padding: 0.8rem;
+      background: transparent; color: var(--gray-mid);
+      border: 1px solid var(--border); border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      text-decoration: none; display: flex;
+      align-items: center; justify-content: center; gap: 0.4rem;
+    }
+    .btn-continue:hover { border-color: rgba(168,85,247,0.4); color: var(--white); }
+
+    /* Secure badges */
+    .secure-badges {
+      display: flex; justify-content: center; gap: 1.25rem;
+      margin-top: 1.25rem; flex-wrap: wrap;
+    }
+    .badge-item {
+      display: flex; align-items: center; gap: 0.35rem;
+      font-size: 0.7rem; color: var(--gray-mid);
+    }
+
+    /* Buyer info form */
+    .buyer-form {
+      margin-top: 1.75rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+    .buyer-form-title {
+      font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--gray-light); margin-bottom: 1rem;
+    }
+    .form-group { margin-bottom: 0.9rem; }
+    .form-group label {
+      display: block; font-size: 0.75rem;
+      font-weight: 600; color: var(--gray-mid);
+      margin-bottom: 0.35rem;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px; color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem; outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input::placeholder { color: var(--gray-mid); }
+    .form-group input:focus { border-color: var(--purple-bright); }
+    .form-group input.error { border-color: var(--error); }
+    .field-err {
+      font-size: 0.7rem; color: var(--error);
+      margin-top: 0.25rem; display: none;
+    }
+    .field-err.show { display: block; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 860px) {
+      .cart-layout { grid-template-columns: 1fr; }
+      .order-summary { position: static; }
+    }
+    @media (max-width: 600px) {
+      nav { padding: 0 1.25rem; }
+      .page { padding: 5rem 1.25rem 3rem; }
+      .cart-item {
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+      }
+      .item-controls {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border);
+      }
+      .progress-bar { gap: 0; }
+      .step-label { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="nav-logo">TICKETS<span>HUB</span></a>
+    <div class="nav-right">
+      <a href="index.html" class="nav-back">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Continue Shopping
+      </a>
+      <div class="nav-user" id="navUser"></div>
+    </div>
+  </nav>
+
+  <div class="page">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="page-label">🛒 Checkout</div>
+      <h1 class="page-title">YOUR CART</h1>
+      <p class="page-subtitle" id="cartSubtitle">Review your tickets before proceeding to payment</p>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-bar">
+      <div class="progress-step active">
+        <div class="step-circle">1</div>
+        <span class="step-label">Cart</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="progress-step">
+        <div class="step-circle">2</div>
+        <span class="step-label">Details</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="progress-step">
+        <div class="step-circle">3</div>
+        <span class="step-label">Payment</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="progress-step">
+        <div class="step-circle">4</div>
+        <span class="step-label">Confirm</span>
+      </div>
+    </div>
+
+    <!-- Layout -->
+    <div class="cart-layout">
+
+      <!-- LEFT: Cart Items -->
+      <div>
+        <div class="section-heading">
+          Tickets <span class="item-count" id="itemCount">0</span>
+        </div>
+
+        <!-- Items render here -->
+        <div id="cartItemsContainer"></div>
+
+        <!-- Empty state -->
+        <div class="empty-cart" id="emptyCart">
+          <div class="empty-icon">🎟️</div>
+          <div class="empty-title">YOUR CART IS EMPTY</div>
+          <p class="empty-sub">Looks like you haven't added any tickets yet.</p>
+          <a href="index.html" class="btn-browse">Browse Events →</a>
+        </div>
+
+        <!-- Promo code -->
+        <div id="promoSection" style="display:none;">
+          <div class="promo-row">
+            <input class="promo-input" id="promoInput" placeholder="Promo code (optional)" />
+            <button class="btn-apply" onclick="applyPromo()">Apply</button>
+          </div>
+          <div style="font-size:0.73rem;color:var(--gray-mid);margin-top:0.5rem;" id="promoMsg"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Order Summary -->
+      <div>
+        <div class="order-summary">
+          <div class="summary-title">Order Summary</div>
+
+          <div class="summary-lines" id="summaryLines">
+            <div class="summary-line">
+              <span class="s-label">Subtotal</span>
+              <span class="s-value" id="summarySubtotal">—</span>
+            </div>
+            <div class="summary-line">
+              <span class="s-label">Service fee (8%)</span>
+              <span class="s-value" id="summaryFee">—</span>
+            </div>
+            <div class="summary-line discount" id="discountLine" style="display:none;">
+              <span class="s-label">Promo discount</span>
+              <span class="s-value" id="summaryDiscount">—</span>
+            </div>
+          </div>
+
+          <hr class="summary-divider"/>
+
+          <div class="summary-total">
+            <div class="total-label">Total (USD)</div>
+            <div class="total-amount" id="summaryTotal">—</div>
+          </div>
+
+          <!-- Buyer details form -->
+          <div class="buyer-form" id="buyerForm" style="display:none;">
+            <div class="buyer-form-title">📋 Your Details</div>
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" id="buyerName" placeholder="As on your ID"/>
+              <div class="field-err" id="nameErr">Please enter your full name.</div>
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" id="buyerEmail" placeholder="Confirmation sent here"/>
+              <div class="field-err" id="emailErr">Please enter a valid email.</div>
+            </div>
+            <div class="form-group">
+              <label>WhatsApp / Phone <span style="color:var(--gray-mid);font-weight:400;">(optional)</span></label>
+              <input type="tel" id="buyerPhone" placeholder="+1 234 567 8900"/>
+            </div>
+            <div class="form-group">
+              <label>Country</label>
+              <input type="text" id="buyerCountry" placeholder="Your country"/>
+              <div class="field-err" id="countryErr">Please enter your country.</div>
+            </div>
+          </div>
+
+          <button class="btn-checkout" id="checkoutBtn" onclick="handleCheckout()" disabled>
+            Proceed to Payment →
+          </button>
+          <a href="index.html" class="btn-continue">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            Continue Shopping
+          </a>
+
+          <div class="secure-badges">
+            <div class="badge-item">🔒 Secure</div>
+            <div class="badge-item">📧 Email Confirm</div>
+            <div class="badge-item">✅ Verified</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
